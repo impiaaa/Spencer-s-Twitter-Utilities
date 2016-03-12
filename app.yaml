@@ -1,0 +1,63 @@
+application: spencers-twitter-utils
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /apple-touch-icon\.png
+  static_files: static/apple-touch-icon.png
+  upload: static/apple-touch-icon\.png
+
+- url: /browserconfig\.xml
+  static_files: static/browserconfig.xml
+  upload: static/browserconfig\.xml
+
+- url: /crossdomain\.xml
+  static_files: static/crossdomain.xml
+  upload: static/crossdomain\.xml
+
+- url: /favicon\.ico
+  static_files: static/favicon.ico
+  upload: static/favicon\.ico
+
+- url: /humans\.txt
+  static_files: static/humans.txt
+  upload: static/humans\.txt
+
+- url: /robots\.txt
+  static_files: static/robots.txt
+  upload: static/robots\.txt
+
+- url: /tile-wide\.png
+  static_files: static/tile-wide.png
+  upload: static/tile-wide\.png
+
+- url: /tile\.png
+  static_files: static/tile\.png
+  upload: static/tile.png
+
+- url: /css
+  static_dir: static/css
+
+- url: /img
+  static_dir: static/img
+
+- url: /js
+  static_dir: static/js
+
+- url: /(|bogus|follow|login|logout)
+  script: main.app
+
+- url: /ajax/(.*)
+  script: \1.ajax.app
+
+- url: .*
+  static_files: static/404.html
+  upload: static/404\.html
+
+libraries:
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest
