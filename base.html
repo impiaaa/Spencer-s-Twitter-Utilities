@@ -27,18 +27,20 @@
             <header class="wrapper clearfix">
                 {% block header %}
                 <h1 class="title"><a href="/">Spencer's Twitter Tools</a></h1>
+                <div class="login">
+                {% if user is defined %}
+                    <p>@{{ user.screen_name }} - <a href="/logout">Log Out</a></p>
+                {% else %}
+                    <a href="/login" class="loginbutton"><img src="/img/sign-in-with-twitter-gray.png" alt="Sign in with Twitter"></a>
+                {% endif %}
+                </div>
                 <nav>
                     <ul>
                         <li><a href="/follow">Follow Suggestions</a></li>
                         <li><a href="/bogus">Bogus Followers</a></li>
                     </ul>
-                    {% if user is defined %}
-                        @{{ user.username }} - <a href="/logout">Log Out</a>
-                    {% else %}
-                        <a href="/login">Log In</a>
-                    {% endif %}
-                    {% endblock %}
                 </nav>
+                {% endblock %}
             </header>
         </div>
 
