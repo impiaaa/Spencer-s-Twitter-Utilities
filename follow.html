@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Follow Suggestions</h2>
+    <table>
+    {% for user, score in suggestions %}
+    <tr>
+    <td><img src="{{ user.profile_image_url.replace('_normal.png', '_mini.png') }}" alt="@{{ user.screen_name }}'s profile image"></td>
+    <td>{{ user.name|e }} (<a href="https://twitter.com/{{ user.screen_name }}" target="_blank">@{{ user.screen_name }}</a>, {{ score }} you know follow)</td>
+    <td>
+    <a class="twitter-follow-button"
+        href="https://twitter.com/{{ user.screen_name }}"
+        data-show-count="false"
+        data-show-screen-name="false">Follow @{{ user.screen_name }}</a>
+    </td>
+    {% endfor %}
+    </table>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>window.twttr = (function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0],
+    t = window.twttr || {};
+  if (d.getElementById(id)) return t;
+  js = d.createElement(s);
+  js.id = id;
+  js.src = "https://platform.twitter.com/widgets.js";
+  fjs.parentNode.insertBefore(js, fjs);
+ 
+  t._e = [];
+  t.ready = function(f) {
+    t._e.push(f);
+  };
+ 
+  return t;
+}(document, "script", "twitter-wjs"));</script>
+{$ endblock %}

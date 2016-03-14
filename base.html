@@ -55,12 +55,14 @@
         <div class="footer-container">
             <footer class="wrapper">
                 {% block footer %}
-                <h3>© Copyright 2016 by Spencer Alves.</h3>
+                <p>© Copyright 2016 by Spencer Alves.</p>
                 {% endblock %}
             </footer>
         </div>
 
+        {% block scripts %}
         <script src="js/main.js"></script>
+        {% endblock %}
 
         <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
         <script>

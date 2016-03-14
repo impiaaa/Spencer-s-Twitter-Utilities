@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Follow Suggestions</h2>
+    <ul id="suggestionList">
+    </ul>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+var friends = [];
+
+var timeout = 0;
+
+function doRequest(url, callback) {
+    var req1 = new XMLHttpRequest();
+    req1.onreadystatechange = function() {
+        if (this.readyState !== XMLHttpRequest.DONE) {
+            return;
+        }
+        if (this.status !== 200) {
+            alert("Error: "+this.responseText);
+            return;
+        }
+        var thisTimeout = JSON.parse(this.responseText)*1000+1000;
+        timeout += thisTimeout;
+        var req2 = new XMLHttpRequest();
+        req2.onreadystatechange = callback;
+        req2.open("GET", url);
+        window.setTimeout(function() { timeout -= thisTimeout; req2.send(); }, timeout);
+    };
+    req1.open("GET", "/ajax/getTimeout");
+    req1.send();
+}
+
+function getFriendsResponse() {
+    if (this.readyState !== XMLHttpRequest.DONE) {
+        return;
+    }
+    if (this.status !== 200) {
+        alert("Error: "+this.responseText);
+        return;
+    }
+    var response = JSON.parse(this.responseText);
+    var next_cursor = response.length;
+
+    if (next_cursor !== 0) {
+        doRequest("/ajax/getFriends?cursor="+next_cursor, getFriendsResponse);
+    }
+    
+    friends = friends.concat(response);
+    
+    for (var i = 0; i < response.length; i++) {
+        doRequest("/ajax/getFriends?id="+response[i], function() { getSuggestionsResponse(this, response[i]) });
+    }
+}
+
+var suggestionScores = [];
+
+function getSuggestionsResponse(req, friend_id) {
+    if (req.readyState !== XMLHttpRequest.DONE) {
+        return;
+    }
+    if (req.status !== 200) {
+        alert("Error: "+this.responseText);
+        return;
+    }
+    var response = JSON.parse(req.responseText);
+    var next_cursor = response.length;
+
+    if (next_cursor !== 0) {
+        doRequest("/ajax/getFriends?id="+friend_id+"&cursor="+next_cursor, function() { getSuggestionsResponse(this, friend_id) });
+    }
+
+    for (var i = 0; i < response.length; i++) {
+        var suggestion_id = response[i];
+        if (friends[suggestion_id] === undefined) { // not already following
+            if (suggestionScores[suggestion_id] === undefined) {
+                suggestionScores[suggestion_id] = 1;
+            }
+            else {
+                suggestionScores[suggestion_id]++;
+            }
+        }
+    }
+    updateSuggestionList();
+}
+
+var suggestionList = document.getElementById("suggestionList");
+var cachedUserInfo = {};
+
+function setUser(el, user) {
+    el.innerHTML = user.name + "(<a href='//twitter.com/" + user.screen_name + "' target='_blank'>@" + user.screen_name + ")";
+}
+
+function updateSuggestionList() {
+    var mapped = suggestionScores.map(function(user_score, user_id) {
+        return { score: user_score, id: user_id };
+    });
+    mapped.sort(function(a, b) {
+        return b.score - a.score; // reverse
+    });
+    for (var i = 0; i < 50 && i < mapped.length; i++) {
+        var user_id = mapped[i].id;
+        var score = mapped[i].score;
+        var el;
+        if (i >= suggestionList.childNodes.length) {
+            el = document.createElement("li");
+            suggestionList.appendChild(el);
+        }
+        else {
+            el = suggestionList.childNodes[i];
+        }
+        if (cachedUserInfo[user_id] === undefined) {
+            doRequest("/ajax/getUser?id="+user_id, function() {
+                if (this.readyState !== XMLHttpRequest.DONE) {
+                    return;
+                }
+                if (this.status !== 200) {
+                    alert("Error: "+this.responseText);
+                }
+                var response = JSON.parse(this.responseText);
+                cachedUserInfo[user_id] = response;
+                setUser(el, response.user);
+            });
+        }
+        else {
+            setUser(el, cachedUserInfo[user_id]);
+        }
+    }
+}
+
+doRequest("/ajax/getFriends", getFriendsResponse);
+
+</script>
+{% endblock %}

@@ -46,11 +46,20 @@ handlers:
 - url: /js
   static_dir: static/js
 
-- url: /(|bogus|follow|login|logout)
-  script: main.app
+- url: /follow
+  script: follow.app
+- url: /ajax/getFriends
+  script: follow.app
+- url: /ajax/getUser
+  script: follow.app
+- url: /ajax/getTimeout
+  script: follow.app
 
-- url: /ajax/(.*)
-  script: \1.ajax.app
+- url: /bogus
+  script: bogus.app
+
+- url: /(|login|logout)
+  script: main.app
 
 - url: .*
   static_files: static/404.html
