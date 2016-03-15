@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2>Follow Suggestions</h2>
+    <h2>Bogus Followers</h2>
     <table>
-    {% for user, score in suggestions %}
+    {% for user, score in bogusFollowers %}
     <tr>
-    <td><img src="{{ user.profile_image_url.replace('_normal.png', '_mini.png') }}" alt="@{{ user.screen_name }}'s profile image"></td>
-    <td>{{ user.name|e }} (<a href="https://twitter.com/{{ user.screen_name }}" target="_blank">@{{ user.screen_name }}</a>)</td>
+    <td><img src="{{ user.profile_image_url.replace('_normal.png', '_mini.png') }}" alt="@{{ user.screen_name }}'s profile image" style="height: 24px;"></td>
+    <td>{{ user.name|e }} (<a href="https://twitter.com/{{ user.screen_name }}" target="_blank">@{{ user.screen_name }}</a>, follows {{ score }} you know)</td>
     <!--td>
     <a href="javascript:block({{ user.id }})">Block @{{ user.screen_name }}</a>
     </td-->

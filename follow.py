@@ -4,7 +4,6 @@ import webapp2
 import logging
 from base import BaseHandler, config
 import json
-import time
 from twitter import TwitterError
 
 class MainHandler(BaseHandler):
@@ -16,7 +15,7 @@ class MainHandler(BaseHandler):
         suggestions = {}
         cachedUserInfo = {}
         logging.debug("Looking up my friends")
-        friends = self.api.GetFriends()
+        friends = self.cachedGetFriends()
         friendIds = [friend.id for friend in friends]
         logging.debug("Found %d friends"%len(friends))
         for friend in friends:
@@ -25,19 +24,9 @@ class MainHandler(BaseHandler):
                 continue
             friendId = friend.id
             logging.debug("%s has %d friends"%(friend.screen_name, friend.friends_count))
-            sec = self.api.GetSleepTime('/friends/list')
-            logging.debug("Waiting %d seconds to look up %s's friends"%(sec, friend.screen_name))
-            time.sleep(sec)
-            try:
-                logging.debug("Looking up %s's friends"%friend.screen_name)
-                userIds = self.api.GetFriends(user_id=friendId)
-            except TwitterError, e:
-                logging.error(e)
-                logging.debug("Waiting 10 seconds")
-                time.sleep(10)
-                continue
-            logging.debug("Found %s has %d friends"%(friend.screen_name, len(userIds)))
-            for user in userIds:
+            users = self.cachedGetFriends(user_id=friendId, count=friend.friends_count)
+            logging.debug("Found %s has %d friends"%(friend.screen_name, len(users)))
+            for user in users:
                 userId = user.id
                 if userId in friendIds: continue
                 if userId not in cachedUserInfo:
@@ -49,7 +38,7 @@ class MainHandler(BaseHandler):
             logging.debug("Now there are %d suggestions"%len(suggestions))
         logging.debug("All done finding suggestions, now sorting")
         suggestionPairs = suggestions.items()
-        suggestionPairs.sort(key=lambda a: a[1])
+        suggestionPairs.sort(key=lambda a: a[1], reverse=True)
         logging.debug("Done sorting, now sending response")
         self.write_response("follow.html", {"suggestions": suggestionPairs})
 

@@ -4,6 +4,8 @@ from webapp2_extras import sessions
 from webapp2_extras import sessions_ndb
 import os
 import twitter
+from google.appengine.api import memcache
+import logging, time
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -63,6 +65,43 @@ class BaseHandler(webapp2.RequestHandler):
                       consumer_secret=consumer_secret,
                       access_token_key=self.session["oauth_token"],
                       access_token_secret=self.session["oauth_token_secret"])
+    
+    def cachedGetFriends(self, user_id=None, count=None):
+        key = '' if user_id is None else hex(user_id)
+        data = memcache.get(key, namespace="friends")
+        if data is None:
+            while True:
+                sec = self.api.GetSleepTime('/friends/list')
+                logging.debug("Waiting %d seconds to look up %s's friends"%(sec, user_id))
+                time.sleep(sec)
+                try:
+                    logging.debug("Looking up %s's friends"%user_id)
+                    data = self.api.GetFriends(user_id=user_id, count=count)
+                except TwitterError, e:
+                    logging.error(e)
+                    continue
+                break
+            memcache.add(key, data, 24*60*60, namespace="friends")
+            memcache.add(key, [user.id for user in data], 24*60*60, namespace="friendIds")
+        return data
+
+    def cachedGetFriendIds(self, user_id=None, count=None):
+        key = '' if user_id is None else hex(user_id)
+        data = memcache.get(key, namespace="friendIds")
+        if data is None:
+            while True:
+                sec = self.api.GetSleepTime('/friends/list')
+                logging.debug("Waiting %d seconds to look up %s's friends"%(sec, user_id))
+                time.sleep(sec)
+                try:
+                    logging.debug("Looking up %s's friends"%user_id)
+                    data = self.api.GetFriendIDs(user_id=user_id, count=count)
+                except TwitterError, e:
+                    logging.error(e)
+                    continue
+                break
+            memcache.add(key, data, 24*60*60, namespace="friendIds")
+        return data
 
 config = {
     'webapp2_extras.sessions': {

@@ -4,7 +4,6 @@ import webapp2
 import logging
 from base import BaseHandler, config
 import json
-import time
 from twitter import TwitterError
 
 class MainHandler(BaseHandler):
@@ -13,7 +12,29 @@ class MainHandler(BaseHandler):
             self.do_error("Login required", 403)
             return
 
-        self.write_response("follow.html", {"suggestions": suggestionPairs})
+        logging.debug("Looking up my friends")
+        friendIds = set(self.cachedGetFriendIds())
+        logging.debug("Found %d friends"%len(friendIds))
+        
+        logging.debug("Looking up my followers")
+        followers = self.api.GetFollowers()
+        followerIds = [follower.id for follower in followers]
+        logging.debug("Found %d followers"%len(followers))
+        
+        bogusFollowers = []
+        
+        for follower in followers:
+            if follower.friends_count >= 5000:
+                logging.debug("%s has too many friends"%follower.screen_name)
+                continue
+            logging.debug("%s has %d friends"%(follower.screen_name, follower.friends_count))
+            followerFriendIds = set(self.cachedGetFriendIds(user_id=follower.id, count=follower.friends_count))
+            logging.debug("Found %s has %d friends"%(follower.screen_name, len(followerFriendIds)))
+            bogusFollowers.append((follower, len(friendIds.intersection(followerFriendIds))))
+        
+        bogusFollowers.sort(key=lambda a: a[1])
+        
+        self.write_response("bogus.html", {"bogusFollowers": bogusFollowers})
 
 class BlockAjaxHandler(BaseHandler):
     def post(self):
