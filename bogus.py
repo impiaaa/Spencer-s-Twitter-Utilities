@@ -18,17 +18,19 @@ class MainHandler(BaseHandler):
         
         logging.debug("Looking up my followers")
         followers = self.api.GetFollowers()
+        followers.sort(key=lambda a: a.friends_count)
         followerIds = [follower.id for follower in followers]
         logging.debug("Found %d followers"%len(followers))
         
         bogusFollowers = []
         
         for follower in followers:
-            if follower.friends_count >= 5000:
+            if follower.friends_count >= 1000:
                 logging.debug("%s has too many friends"%follower.screen_name)
                 continue
             logging.debug("%s has %d friends"%(follower.screen_name, follower.friends_count))
-            followerFriendIds = set(self.cachedGetFriendIds(user_id=follower.id, count=follower.friends_count))
+            try: followerFriendIds = set(self.cachedGetFriendIds(user_id=follower.id, count=follower.friends_count))
+            except TwitterError: continue # probably not authorized
             logging.debug("Found %s has %d friends"%(follower.screen_name, len(followerFriendIds)))
             bogusFollowers.append((follower, len(friendIds.intersection(followerFriendIds))))
         

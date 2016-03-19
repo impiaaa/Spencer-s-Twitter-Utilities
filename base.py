@@ -67,40 +67,67 @@ class BaseHandler(webapp2.RequestHandler):
                       access_token_secret=self.session["oauth_token_secret"])
     
     def cachedGetFriends(self, user_id=None, count=None):
-        key = '' if user_id is None else hex(user_id)
+        key = '--me--' if user_id is None else hex(user_id)
         data = memcache.get(key, namespace="friends")
+        if data == []:
+            memcache.delete(key, namespace="friends")
+            data = None
         if data is None:
             while True:
-                sec = self.api.GetSleepTime('/friends/list')
+                time.sleep(1)
+                try: sec = self.api.GetSleepTime('/friends/list')
+                except twitter.TwitterError, e:
+                    if isinstance(e.message[0], dict) and e.message[0]["message"] == u"Rate limit exceeded":
+                        logging.debug("Waiting a minute because I broke the rate limit!")
+                        time.sleep(60)
+                        continue
+                    else:
+                        raise # re-raise instead of consume exception
                 logging.debug("Waiting %d seconds to look up %s's friends"%(sec, user_id))
                 time.sleep(sec)
                 try:
                     logging.debug("Looking up %s's friends"%user_id)
                     data = self.api.GetFriends(user_id=user_id, count=count)
-                except TwitterError, e:
+                except twitter.TwitterError, e:
                     logging.error(e)
-                    continue
+                    if isinstance(e.message[0], dict) and e.message[0]["message"] == u"Rate limit exceeded": continue # re-try after sleep
+                    else: raise
                 break
-            memcache.add(key, data, 24*60*60, namespace="friends")
-            memcache.add(key, [user.id for user in data], 24*60*60, namespace="friendIds")
+            try: memcache.add(key, data, 24*60*60, namespace="friends")
+            except ValueError, e: logging.error(e)
+            try: memcache.add(key, [user.id for user in data], 24*60*60, namespace="friendIds")
+            except ValueError, e: logging.error(e)
         return data
 
     def cachedGetFriendIds(self, user_id=None, count=None):
-        key = '' if user_id is None else hex(user_id)
+        key = '--me--' if user_id is None else hex(user_id)
         data = memcache.get(key, namespace="friendIds")
+        if data == []:
+            memcache.delete(key, namespace="friends")
+            data = None
         if data is None:
             while True:
-                sec = self.api.GetSleepTime('/friends/list')
+                time.sleep(1)
+                try: sec = self.api.GetSleepTime('/friends/ids')
+                except twitter.TwitterError, e:
+                    if isinstance(e.message[0], dict) and e.message[0]["message"] == u"Rate limit exceeded":
+                        logging.debug("Waiting a minute because I broke the rate limit!")
+                        time.sleep(60)
+                        continue
+                    else:
+                        raise # re-raise instead of consume exception
                 logging.debug("Waiting %d seconds to look up %s's friends"%(sec, user_id))
                 time.sleep(sec)
                 try:
                     logging.debug("Looking up %s's friends"%user_id)
                     data = self.api.GetFriendIDs(user_id=user_id, count=count)
-                except TwitterError, e:
+                except twitter.TwitterError, e:
                     logging.error(e)
-                    continue
+                    if isinstance(e.message[0], dict) and e.message[0]["message"] == u"Rate limit exceeded": continue # re-try after sleep
+                    else: raise
                 break
-            memcache.add(key, data, 24*60*60, namespace="friendIds")
+            try: memcache.add(key, data, 24*60*60, namespace="friendIds")
+            except ValueError, e: logging.error(e)
         return data
 
 config = {

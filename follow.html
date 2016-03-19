@@ -4,7 +4,7 @@
     <table>
     {% for user, score in suggestions %}
     <tr>
-    <td><img src="{{ user.profile_image_url.replace('_normal.png', '_mini.png') }}" alt="@{{ user.screen_name }}'s profile image"></td>
+    <td><img src="{{ user.profile_image_url.replace('_normal.png', '_mini.png') }}" alt="@{{ user.screen_name }}'s profile image" style="height: 24px;"></td>
     <td>{{ user.name|e }} (<a href="https://twitter.com/{{ user.screen_name }}" target="_blank">@{{ user.screen_name }}</a>, {{ score }} you know follow)</td>
     <td>
     <a class="twitter-follow-button"
@@ -33,4 +33,4 @@
  
   return t;
 }(document, "script", "twitter-wjs"));</script>
-{$ endblock %}
+{% endblock %}

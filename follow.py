@@ -16,16 +16,18 @@ class MainHandler(BaseHandler):
         cachedUserInfo = {}
         logging.debug("Looking up my friends")
         friends = self.cachedGetFriends()
+        friends.sort(key=lambda a: a.friends_count)
         friendIds = [friend.id for friend in friends]
         logging.debug("Found %d friends"%len(friends))
         for friend in friends:
-            if friend.friends_count >= 5000:
+            if friend.friends_count >= 1000:
                 logging.debug("%s has too many friends"%friend.screen_name)
                 continue
             friendId = friend.id
             logging.debug("%s has %d friends"%(friend.screen_name, friend.friends_count))
             users = self.cachedGetFriends(user_id=friendId, count=friend.friends_count)
             logging.debug("Found %s has %d friends"%(friend.screen_name, len(users)))
+            if len(users) == 0: continue
             for user in users:
                 userId = user.id
                 if userId in friendIds: continue
@@ -37,8 +39,9 @@ class MainHandler(BaseHandler):
                     suggestions[userId] = 1
             logging.debug("Now there are %d suggestions"%len(suggestions))
         logging.debug("All done finding suggestions, now sorting")
-        suggestionPairs = suggestions.items()
+        suggestionPairs = [(cachedUserInfo[userId], score) for userId, score in suggestions.iteritems()]
         suggestionPairs.sort(key=lambda a: a[1], reverse=True)
+        suggestionPairs = suggestionPairs[:100]
         logging.debug("Done sorting, now sending response")
         self.write_response("follow.html", {"suggestions": suggestionPairs})
 
